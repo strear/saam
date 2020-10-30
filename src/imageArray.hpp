@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Array.hpp"
 #include <cstdint>
+#include "Array.hpp"
 
 namespace Saam {
     class PicLoader {

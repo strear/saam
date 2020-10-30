@@ -1,5 +1,3 @@
-#include "../imageArray.hpp"
-
 #undef UNICODE
 #include <windows.h>
 #include <wincodec.h>
@@ -7,6 +5,7 @@
 
 /* 修改：引用相关头文件，提供符号定义 */
 #include "../imageArray.hpp"
+using namespace Saam;
 /* 修改：结束 */
 
 namespace {
@@ -20,8 +19,8 @@ namespace {
 
     class ReadImpl {
     public:
-        PicReader();
-        ~PicReader();
+        ReadImpl();
+        ~ReadImpl();
 
         void readPic(LPCSTR);
 
@@ -42,27 +41,27 @@ namespace {
         /* 修改：这里可能会增加你需要的内部成员（未使用） */
     };
 
-    PicReader::PicReader() : hFile(nullptr), m_pIWICFactory(nullptr), m_pConvertedSourceBitmap(nullptr) {
+    ReadImpl::ReadImpl() : hFile(nullptr), m_pIWICFactory(nullptr), m_pConvertedSourceBitmap(nullptr) {
         init();
     }
 
-    PicReader::~PicReader() {
+    ReadImpl::~ReadImpl() {
         if (hFile != NULL) CloseHandle(hFile);
         SafeRelease(m_pConvertedSourceBitmap);
         SafeRelease(m_pIWICFactory);
         CoUninitialize();
     }
 
-    bool PicReader::checkHR(HRESULT hr) {
+    bool ReadImpl::checkHR(HRESULT hr) {
         return (hr < 0);
     }
 
-    void PicReader::quitWithError(LPCSTR message) {
+    void ReadImpl::quitWithError(LPCSTR message) {
         MessageBoxA(hWnd, message, "Application Error", MB_ICONEXCLAMATION | MB_OK);
         quick_exit(0xffffffff);
     }
 
-    void PicReader::init() {
+    void ReadImpl::init() {
         hWnd = GetForegroundWindow();
 
         // Enables the terminate-on-corruption feature.
@@ -85,7 +84,7 @@ namespace {
         if (checkHR(hr)) { quitWithError("Init Reader Failed"); }
     }
 
-    void PicReader::readPic(LPCSTR fileName) {
+    void ReadImpl::readPic(LPCSTR fileName) {
         HRESULT hr = S_OK;
 
         // Create a File Handle (WinAPI method not std c)
@@ -119,7 +118,7 @@ namespace {
     }
 
     /* 修改：返回自定义类型的读取函数原型 */
-    void PicReader::getData(Array<BYTE>& receiver) {
+    void ReadImpl::getData(Array<BYTE>& receiver) {
         HRESULT hr = S_OK;
 
         // Get the size of Image
@@ -176,5 +175,5 @@ void PicLoader::loadPic(const char* file) {
 }
 
 void PicLoader::getPixels(Array<int8_t>& receiver) {
-    ((ReadImpl*)impl)->getData(file);
+    ((ReadImpl*)impl)->getData((Array<BYTE>&)receiver);
 }

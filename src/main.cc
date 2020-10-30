@@ -1,5 +1,8 @@
+#include "imageArray.hpp"
+#include "media.hpp"
 #include "saam.hpp"
 #include "tuiapp.hpp"
+
 #include <cstdio>
 #include <climits>
 #include <functional>
@@ -21,13 +24,13 @@ namespace {
 		unsigned char shadingThreshold = 1;
 		bool loop = 0;
 		bool autoscale = 0;
-		int maxWidth = INT_MAX, maxHeight = INT_MAX;
+		size_t maxWidth = INT_MAX, maxHeight = INT_MAX;
 		const char* media = nullptr;
 		int coefficient = 603;
 		std::list<std::string> files;
 		int interval = 6000000;
 
-		RuntimeConfig(Cmdline&, std::function<void(bool, const char*, const char*)>&);
+		RuntimeConfig(Cmdline&, std::function<void(bool, const char*, const char*)>);
 	};
 
 	void help(const char* appname) {
@@ -72,45 +75,15 @@ General option:
 		fprintf(stderr, helpmsg, appname);
 	}
 
-	void load(Array<byte>* arrayBuf, RuntimeConfig& conf, PicLoader& imread);
-	void show(Array<byte>* arrayBuf, const RuntimeConfig& conf,
-		Media* bgm, TextFramebuffer& display);
-}
-
-int main(int argc, char** argv) {
-	Cmdline cmd(argc, argv);
-
-	auto errchk = [&](bool flag, const char* errtype, const char* detail) {
-		if (flag) return;
-
-		fprintf(stderr, "%s: %s", cmd.appname());
-		if (detail != nullptr) fprintf(stderr, " -- '%s'", detail);
-		fprintf(stderr, "\nTry '--help' for more information.\n");
-
-		quit(errtype[0]);
-	};
-
-	RuntimeConfig config(cmd, errchk);
-
-
-
-
-
-
-
-	return 0;
-}
-
-namespace {
 	RuntimeConfig::RuntimeConfig(Cmdline& cmd,
-		std::function<void(bool, const char*, const char*)>& errchk) {
+		std::function<void(bool, const char*, const char*)> errchk) {
 
 		if (cmd.get("help")) {
 			help(cmd.appname());
 			quit(0);
 		}
 
-		monochrome = cmd.get("monochrome");
+		monochrome = TextFramebuffer::isMonochrome() || cmd.get("monochrome");
 		reverse = cmd.get("reverse");
 
 		if (!monochrome) {
@@ -120,7 +93,7 @@ namespace {
 			if (shading) {
 				const char* thresholdStr;
 				if (cmd.get("shadingThreshold", thresholdStr)) {
-					errchk(parseInt(thresholdStr, this->shadingThreshold),
+					errchk(parseInt<unsigned char>(thresholdStr, this->shadingThreshold),
 						"invalid threshold value", thresholdStr);
 					errchk(shadingThreshold > 0 && shadingThreshold <= 255,
 						"threshold value out of range", thresholdStr);
@@ -167,20 +140,162 @@ namespace {
 		}
 
 		if (cmd.get("media", media)) {
-			errchk(checkFile(media, FileAccessState::R_OK),
+			errchk(accessible(media, FileAccessState::R_OK),
 				"file inaccessible", media);
 		}
 
-		const char* leftParam = cmd.firstUnresolved();
-		err.chk(leftParam == nullptr, "unrecognized parameter", leftParam);
+		const char* leftParam = cmd.pop();
+		errchk(leftParam == nullptr, "unrecognized parameter", leftParam);
 
+		cmd.get('-');
+		errchk(cmd.remainc() != 0, "missing file operand", nullptr);
 
+		leftParam = cmd.pop();
+		if (leftParam[0] == ':') {
+			errchk(accessible(&leftParam[1], FileAccessState::R_OK) == 0,
+				"file inaccessable", &leftParam[1]);
 
+			std::ifstream is(&leftParam[1], std::ios::ate);
+			size_t size = is.tellg();
+			char* buf = new char[size];
 
+			is.seekg(0);
+			is.read(buf, size);
+			is.close();
 
+			for (char* entry = buf, *next_entry; entry != buf + size; entry = next_entry) {
+				next_entry = std::find(entry, buf + size, '\n');
+				files.push_back(std::string(entry, next_entry));
+				errchk(accessible(files.back().c_str(), FileAccessState::R_OK),
+					"file inaccessable", files.back().c_str());
+			}
+		} else {
+			while (cmd.remainc() != 0) {
+				files.push_back(std::string(cmd.pop()));
+				errchk(accessible(files.back().c_str(), FileAccessState::R_OK),
+					"file inaccessable", files.back().c_str());
+			}
+		}
 
-		if (intervalStr == nullptr && fileCount > 1) {
+		errchk(files.size() > 0, "missing file operand", &leftParam[1]);
+
+		if (intervalStr == nullptr && files.size() > 1) {
 			interval = 2000;
 		}
 	}
+
+	void fit(Array<byte>& dest, size_t width, size_t height) {
+		float scale[2] = {};
+
+		if (width * 2.f < dest.sizeOf(1)) {
+			scale[1] = dest.sizeOf(1) / 2.f / width;
+		}
+		if (height * 4.f < dest.sizeOf(0)) {
+			scale[0] = dest.sizeOf(0) / 4.f / height;
+		}
+
+		if (scale[0] || scale[1]) {
+			if (scale[1] > scale[0]) scale[0] = scale[1];
+
+			dest = dest.resample(
+				size_t(dest.sizeOf(0) / scale[0]),
+				size_t(dest.sizeOf(1) / scale[0]), 4);
+		}
+	}
+
+	size_t load(Array<byte>* picBuf, RuntimeConfig& conf,
+		PicLoader& imread) {
+
+		const size_t fileCount = conf.files.size();
+		size_t i = 0;
+
+		while (!conf.files.empty()) {
+			imread.loadPic(conf.files.front().c_str());
+			imread.getPixels(picBuf[i]);
+			conf.files.pop_front();
+
+			fit(picBuf[i], conf.maxWidth, conf.maxHeight);
+
+			printf("\rLoading image %zu / %zu...", ++i, fileCount);
+		}
+
+		printf("\n");
+		return i;
+	}
+
+	void show(Array<byte>* picBuf, size_t picNum, RuntimeConfig& conf,
+		Media* bgm, TextFramebuffer& display) {
+
+		clock_t tick = clock();
+
+		for (int i = 0; ; ) {
+			if (i >= picNum) {
+				if (bgm != nullptr) bgm->pause();
+
+				if (conf.loop) {
+					if (bgm != nullptr) bgm->reset();
+					i = 0;
+				} else {
+					break;
+				}
+			}
+			if (i == 0 && bgm != nullptr) bgm->play();
+
+			display.ready();
+
+			if (conf.autoscale)
+				fit(picBuf[i], display.getWidth(), display.getHeight());
+
+			if (conf.monochrome) {
+				projectImgMono(display, (ColorRgba*)picBuf[i].cptr(),
+					picBuf[i].sizeOf(1), picBuf[i].sizeOf(0),
+					conf.reverse, conf.density, conf.coefficient);
+			} else {
+				projectImg(display, (ColorRgba*)picBuf[i].cptr(),
+					picBuf[i].sizeOf(1), picBuf[i].sizeOf(0),
+					!conf.grayscale, conf.shading, conf.reverse, conf.density,
+					conf.shadingThreshold, conf.coefficient);
+			}
+
+			display.flush(conf.monochrome && !conf.reverse, conf.noskip);
+			i = (clock() - tick) / conf.interval + 1;
+			sleep(conf.interval * i - (clock() - tick));
+		}
+	}
+}
+
+int main(int argc, char** argv) {
+	Cmdline cmd(argc, argv);
+
+	auto errchk = [&](bool flag,
+		const char* errtype, const char* detail = nullptr) {
+			if (flag) return;
+
+			fprintf(stderr, "%s: %s", cmd.appname(), errtype);
+			if (detail != nullptr) fprintf(stderr, " -- '%s'", detail);
+			fprintf(stderr, "\nTry '--help' for more information.\n");
+
+			quit(errtype[0]);
+	};
+
+	RuntimeConfig conf(cmd, errchk);
+
+	PicLoader imread;
+
+	Array<byte>* picBuf = new Array<byte>[conf.files.size()];
+	errchk(picBuf != nullptr, "out of memory");
+	size_t picNum = load(picBuf, conf, imread);
+
+	TextFramebuffer display;
+
+	Media* bgm = nullptr;
+
+	if (conf.media != nullptr) bgm = new Media(conf.media);
+
+	show(picBuf, picNum, conf, bgm, display);
+
+	if (bgm != nullptr) delete bgm;
+	delete[] picBuf;
+
+	return 0;
 }

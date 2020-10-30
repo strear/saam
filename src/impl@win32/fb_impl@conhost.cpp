@@ -9,7 +9,7 @@ namespace {
     nullptr_t _Initializing_Function_Leader = (
         //SetConsoleCP(GetACP()),
         IsIconic(GetConsoleWindow()) && ShowWindow(GetConsoleWindow(), SW_RESTORE),
-        [hOutput]() {
+        []() {
 
             // invisible the cursor
             hOutput = CreateConsoleScreenBuffer(
@@ -71,8 +71,8 @@ bool TextFramebuffer::isMonochrome() {
     return false;
 }
 
-void TextFramebuffer::_putstr(const char*, size_t len) {
+void TextFramebuffer::_putstr(const char* str, size_t len) {
 	DWORD dWrite = 0;
 	SetConsoleCursorPosition(hOutput, { 0, 0 });
-	WriteConsoleA(hOutput, dataGrid, (DWORD)(size.X * size.Y), &dWrite, NULL);
+	WriteConsoleA(hOutput, str, (DWORD)(size.X * size.Y), &dWrite, NULL);
 }

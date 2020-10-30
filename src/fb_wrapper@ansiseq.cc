@@ -67,7 +67,7 @@ TextFramebuffer::~TextFramebuffer() {
 	delete (ImplData*)impl;
 }
 
-void TextFramebuffer::prepare() {
+void TextFramebuffer::ready() {
 	const size_t area = impl_typed->width * impl_typed->height;
 
 	memset(impl_typed->dataGrid, ' ', area);
@@ -83,8 +83,8 @@ void TextFramebuffer::flush(bool monochrome, bool wait) {
 		!= std::future_status::ready) return;
 
 	impl_typed->worker = std::async(std::launch::async,
-		monochrome ? std::bind(ImplData::flushM, impl_typed)
-		: std::bind(ImplData::flushC, impl_typed));
+		monochrome ? std::bind(&ImplData::flushM, impl_typed)
+		: std::bind(&ImplData::flushC, impl_typed));
 
 	if (wait) impl_typed->worker.wait();
 }

@@ -42,7 +42,7 @@ namespace Saam {
 		TextFramebuffer();
 		~TextFramebuffer();
 
-		void prepare();
+		void ready();
 		void flush(bool monochrome = false, bool wait = false);
 
 		static size_t getWidth();
