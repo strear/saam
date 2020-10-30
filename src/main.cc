@@ -172,9 +172,10 @@ General option:
 			}
 		} else {
 			while (cmd.remainc() != 0) {
-				files.push_back(std::string(cmd.popValue()));
+				files.push_back(std::string(leftParam));
 				errchk(accessible(files.back().c_str(), FileAccessState::R_OK),
 					"file inaccessable", files.back().c_str());
+				leftParam = cmd.popValue();
 			}
 		}
 

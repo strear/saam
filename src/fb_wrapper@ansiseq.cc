@@ -19,7 +19,6 @@ namespace {
 		size_t gridCapacity = 0;
 
 		~ImplData();
-		void updateBound();
 		void updateBound(size_t width, size_t height);
 		void flushC();
 		void flushM();
@@ -78,13 +77,13 @@ TextFramebuffer::~TextFramebuffer() {
 }
 
 void TextFramebuffer::ready() {
+	impl_typed->updateBound(getViewportWidth(), getViewportHeight());
+
 	const size_t area = impl_typed->width * impl_typed->height;
 
 	memset(impl_typed->dataGrid, ' ', area * sizeof(char));
 	memset(impl_typed->frontColorGrid, 0, area * sizeof(ColorRgb));
 	memset(impl_typed->backColorGrid, 0, area * sizeof(ColorRgb));
-
-	impl_typed->updateBound(getViewportWidth(), getViewportHeight());
 }
 
 size_t TextFramebuffer::getWidth() {

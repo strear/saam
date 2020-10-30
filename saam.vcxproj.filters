@@ -62,5 +62,18 @@
     <ClInclude Include="src\saam_graphic.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="assets\resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\icon.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="assets\saam.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

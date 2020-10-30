@@ -157,6 +157,7 @@
     <ClCompile Include="src\tuiapp.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="assets\resource.h" />
     <ClInclude Include="src\Array.hpp" />
     <ClInclude Include="src\imageArray.hpp" />
     <ClInclude Include="src\media.hpp" />
@@ -164,6 +165,12 @@
     <ClInclude Include="src\saam.hpp" />
     <ClInclude Include="src\saam_data.hpp" />
     <ClInclude Include="src\saam_graphic.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="assets\saam.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
