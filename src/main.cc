@@ -1,8 +1,11 @@
 #include "saam.hpp"
-#include "optparser.hpp"
+#include "tuiapp.hpp"
 #include <cstdio>
 #include <climits>
 #include <functional>
+#include <list>
+#include <string>
+#include <fstream>
 
 using namespace Saam;
 using namespace Tuiapp;
@@ -21,12 +24,10 @@ namespace {
 		int maxWidth = INT_MAX, maxHeight = INT_MAX;
 		const char* media = nullptr;
 		int coefficient = 603;
-		char** fileList = nullptr;
-		size_t fileCount;
+		std::list<std::string> files;
 		int interval = 6000000;
 
 		RuntimeConfig(Cmdline&, std::function<void(bool, const char*, const char*)>&);
-		~RuntimeConfig();
 	};
 
 	void help(const char* appname) {
@@ -70,6 +71,10 @@ General option:
 )";
 		fprintf(stderr, helpmsg, appname);
 	}
+
+	void load(Array<byte>* arrayBuf, RuntimeConfig& conf, PicLoader& imread);
+	void show(Array<byte>* arrayBuf, const RuntimeConfig& conf,
+		Media* bgm, TextFramebuffer& display);
 }
 
 int main(int argc, char** argv) {
@@ -122,6 +127,7 @@ namespace {
 				}
 			}
 		}
+
 		loop = cmd.get("loop");
 		noskip = cmd.get("noskip");
 		autoscale = cmd.get("autoscale");
@@ -164,9 +170,17 @@ namespace {
 			errchk(checkFile(media, FileAccessState::R_OK),
 				"file inaccessible", media);
 		}
-	}
 
-	RuntimeConfig::~RuntimeConfig() {
+		const char* leftParam = cmd.firstUnresolved();
+		err.chk(leftParam == nullptr, "unrecognized parameter", leftParam);
 
+
+
+
+
+
+		if (intervalStr == nullptr && fileCount > 1) {
+			interval = 2000;
+		}
 	}
 }
