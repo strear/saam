@@ -2,6 +2,7 @@
 #include "optparser.hpp"
 #include <cstdio>
 #include <climits>
+#include <functional>
 
 using namespace Saam;
 using namespace Tuiapp;
@@ -16,7 +17,7 @@ namespace {
 		int density = 50;
 		unsigned char shadingThreshold = 1;
 		bool loop = 0;
-        bool autoscale = 0;
+		bool autoscale = 0;
 		int maxWidth = INT_MAX, maxHeight = INT_MAX;
 		const char* media = nullptr;
 		int coefficient = 603;
@@ -24,11 +25,11 @@ namespace {
 		size_t fileCount;
 		int interval = 6000000;
 
-		RuntimeConfig(Cmdline&);
+		RuntimeConfig(Cmdline&, std::function<void(bool, const char*, const char*)>&);
 		~RuntimeConfig();
 	};
 
-    void help(const char* appname) {
+	void help(const char* appname) {
 		const char* helpmsg = R"(Simple Ascii Art Maker, showing one or more image files at a time.
 
 Usage: %s [options]... [parameters]=[value]... [file]...
@@ -68,25 +69,101 @@ General option:
   --help                display this help and exit
 )";
 		fprintf(stderr, helpmsg, appname);
-    }
+	}
 }
 
 int main(int argc, char** argv) {
-    Cmdline cmd(argc, argv);
-    RuntimeConfig config(cmd);
-    
+	Cmdline cmd(argc, argv);
+
+	auto errchk = [&](bool flag, const char* errtype, const char* detail) {
+		if (flag) return;
+
+		fprintf(stderr, "%s: %s", cmd.appname());
+		if (detail != nullptr) fprintf(stderr, " -- '%s'", detail);
+		fprintf(stderr, "\nTry '--help' for more information.\n");
+
+		quit(errtype[0]);
+	};
+
+	RuntimeConfig config(cmd, errchk);
 
 
 
 
 
-    
-    return 0;
+
+
+	return 0;
 }
 
 namespace {
-	RuntimeConfig::RuntimeConfig(Cmdline& cmd) {
+	RuntimeConfig::RuntimeConfig(Cmdline& cmd,
+		std::function<void(bool, const char*, const char*)>& errchk) {
 
+		if (cmd.get("help")) {
+			help(cmd.appname());
+			quit(0);
+		}
+
+		monochrome = cmd.get("monochrome");
+		reverse = cmd.get("reverse");
+
+		if (!monochrome) {
+			grayscale = cmd.get("grayscale");
+			if (!reverse) shading = cmd.get("shading");
+
+			if (shading) {
+				const char* thresholdStr;
+				if (cmd.get("shadingThreshold", thresholdStr)) {
+					errchk(parseInt(thresholdStr, this->shadingThreshold),
+						"invalid threshold value", thresholdStr);
+					errchk(shadingThreshold > 0 && shadingThreshold <= 255,
+						"threshold value out of range", thresholdStr);
+				}
+			}
+		}
+		loop = cmd.get("loop");
+		noskip = cmd.get("noskip");
+		autoscale = cmd.get("autoscale");
+
+		const char* maxWidthStr;
+		if (cmd.get("max-width", maxWidthStr)) {
+			errchk(parseInt(maxWidthStr, maxWidth),
+				"invalid maximum width value", maxWidthStr);
+		}
+
+		const char* maxHeightStr;
+		if (cmd.get("max-height", maxHeightStr)) {
+			errchk(parseInt(maxHeightStr, maxHeight),
+				"invalid maximum height value", maxHeightStr);
+		}
+
+		const char* coefficientStr;
+		if (cmd.get("coefficient", coefficientStr)) {
+			errchk(parseInt(coefficientStr, coefficient),
+				"invalid coefficient value", coefficientStr);
+		}
+
+		const char* densityStr;
+		if (cmd.get("density", densityStr)) {
+			errchk(parseInt(densityStr, density),
+				"invalid density value", densityStr);
+			errchk(density >= 0 && density <= 100,
+				"density value out of range", densityStr);
+		}
+
+		const char* intervalStr;
+		if (cmd.get("interval", intervalStr)) {
+			errchk(parseInt(intervalStr, interval),
+				"invalid interval value", intervalStr);
+			errchk(interval >= 0,
+				"negative interval not allowed", intervalStr);
+		}
+
+		if (cmd.get("media", media)) {
+			errchk(checkFile(media, FileAccessState::R_OK),
+				"file inaccessible", media);
+		}
 	}
 
 	RuntimeConfig::~RuntimeConfig() {
