@@ -19,6 +19,7 @@ namespace {
 		size_t gridCapacity = 0;
 
 		~ImplData();
+		void updateBound();
 		void updateBound(size_t width, size_t height);
 		void flushC();
 		void flushM();
@@ -34,17 +35,26 @@ namespace {
 		this->height = h;
 		sequenceLength = area * 128;
 
-		if (dataGrid == nullptr || gridCapacity < area) {
+		if (dataGrid == nullptr) {
 			dataGrid = (char*)malloc(area * sizeof(char));
 			frontColorGrid = (ColorRgb*)malloc(area * sizeof(ColorRgb));
 			backColorGrid = (ColorRgb*)malloc(area * sizeof(ColorRgb));
 			outputSequence = (char*)malloc(sequenceLength * sizeof(char));
 		}
 		else if (gridCapacity < area) {
-			dataGrid = (char*)realloc(dataGrid, area * sizeof(char));
-			frontColorGrid = (ColorRgb*)realloc(frontColorGrid, area * sizeof(ColorRgb));
-			backColorGrid = (ColorRgb*)realloc(backColorGrid, area * sizeof(ColorRgb));
-			outputSequence = (char*)realloc(outputSequence, sequenceLength * sizeof(char));
+			void* tmpptr;
+
+			tmpptr = realloc(dataGrid, area * sizeof(char));
+			if (tmpptr != nullptr) dataGrid = (char*)tmpptr;
+
+			tmpptr = realloc(frontColorGrid, area * sizeof(ColorRgb));
+			if (tmpptr != nullptr) frontColorGrid = (ColorRgb*)tmpptr;
+
+			tmpptr = realloc(backColorGrid, area * sizeof(ColorRgb));
+			if (tmpptr != nullptr) backColorGrid = (ColorRgb*)tmpptr;
+
+			tmpptr = realloc(outputSequence, sequenceLength * sizeof(char));
+			if (tmpptr != nullptr) outputSequence = (char*)tmpptr;
 		}
 
 		gridCapacity = area;
@@ -70,11 +80,19 @@ TextFramebuffer::~TextFramebuffer() {
 void TextFramebuffer::ready() {
 	const size_t area = impl_typed->width * impl_typed->height;
 
-	memset(impl_typed->dataGrid, ' ', area);
-	memset(impl_typed->frontColorGrid, 0, area * 3);
-	memset(impl_typed->backColorGrid, 0, area * 3);
+	memset(impl_typed->dataGrid, ' ', area * sizeof(char));
+	memset(impl_typed->frontColorGrid, 0, area * sizeof(ColorRgb));
+	memset(impl_typed->backColorGrid, 0, area * sizeof(ColorRgb));
 
-	impl_typed->updateBound(getWidth(), getHeight());
+	impl_typed->updateBound(getViewportWidth(), getViewportHeight());
+}
+
+size_t TextFramebuffer::getWidth() {
+	return impl_typed->width;
+}
+
+size_t TextFramebuffer::getHeight() {
+	return impl_typed->height;
 }
 
 void TextFramebuffer::flush(bool monochrome, bool wait) {

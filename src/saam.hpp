@@ -4,7 +4,7 @@
 #include <cstdint>
 
 namespace Saam {
-	using byte = int8_t;
+	using byte = uint8_t;
 
 	struct Pixel {
 		byte v0 = 0, v1 = 0, v2 = 0, v3 = 0;
@@ -44,9 +44,11 @@ namespace Saam {
 
 		void ready();
 		void flush(bool monochrome = false, bool wait = false);
+		size_t getWidth();
+		size_t getHeight();
 
-		static size_t getWidth();
-		static size_t getHeight();
+		static size_t getViewportWidth();
+		static size_t getViewportHeight();
 		static bool isMonochrome();
 		static void _putstr(const char*, size_t len);
 

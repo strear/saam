@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <climits>
 #include <functional>
+#include <iterator>
 #include <list>
 #include <string>
 #include <fstream>
@@ -54,6 +55,7 @@ Graphics mode option:
 Other display options:
   --loop                after all images shown, continue from the beginning
   --noskip              wait for terminal to respond every frame
+  --autoscale           dynamically zoom images according to the display size
 
 Parameters:
   --max-width           specify the maximum width of graphics in characters.
@@ -78,11 +80,6 @@ General option:
 	RuntimeConfig::RuntimeConfig(Cmdline& cmd,
 		std::function<void(bool, const char*, const char*)> errchk) {
 
-		if (cmd.get("help")) {
-			help(cmd.appname());
-			quit(0);
-		}
-
 		monochrome = TextFramebuffer::isMonochrome() || cmd.get("monochrome");
 		reverse = cmd.get("reverse");
 
@@ -93,7 +90,7 @@ General option:
 			if (shading) {
 				const char* thresholdStr;
 				if (cmd.get("shadingThreshold", thresholdStr)) {
-					errchk(parseInt<unsigned char>(thresholdStr, this->shadingThreshold),
+					errchk(parseInt(thresholdStr, this->shadingThreshold),
 						"invalid threshold value", thresholdStr);
 					errchk(shadingThreshold > 0 && shadingThreshold <= 255,
 						"threshold value out of range", thresholdStr);
@@ -144,34 +141,38 @@ General option:
 				"file inaccessible", media);
 		}
 
-		const char* leftParam = cmd.pop();
-		errchk(leftParam == nullptr, "unrecognized parameter", leftParam);
+		std::string leftParam = cmd.firstPendOption();
+		errchk(leftParam.empty(), "unrecognized parameter", leftParam.c_str());
 
 		cmd.get('-');
 		errchk(cmd.remainc() != 0, "missing file operand", nullptr);
 
-		leftParam = cmd.pop();
+		leftParam = cmd.popValue();
 		if (leftParam[0] == ':') {
-			errchk(accessible(&leftParam[1], FileAccessState::R_OK) == 0,
+			errchk(accessible(&leftParam[1], FileAccessState::R_OK),
 				"file inaccessable", &leftParam[1]);
 
-			std::ifstream is(&leftParam[1], std::ios::ate);
-			size_t size = is.tellg();
-			char* buf = new char[size];
+			std::ifstream is(&leftParam[1]);
+			std::string buf{ std::istreambuf_iterator<char>(is),
+				std::istreambuf_iterator<char>() };
+			const size_t size = buf.length();
 
-			is.seekg(0);
-			is.read(buf, size);
 			is.close();
 
-			for (char* entry = buf, *next_entry; entry != buf + size; entry = next_entry) {
-				next_entry = std::find(entry, buf + size, '\n');
-				files.push_back(std::string(entry, next_entry));
+			for (const char* entry = buf.c_str(), *next_entry = entry;
+				next_entry + 1 < buf.c_str() + size; entry = next_entry + 1) {
+
+				next_entry = std::find(entry, buf.c_str() + size, '\n');
+				std::string str(entry, next_entry - entry);
+				if (str.empty()) continue;
+
+				files.push_back(str);
 				errchk(accessible(files.back().c_str(), FileAccessState::R_OK),
 					"file inaccessable", files.back().c_str());
 			}
 		} else {
 			while (cmd.remainc() != 0) {
-				files.push_back(std::string(cmd.pop()));
+				files.push_back(std::string(cmd.popValue()));
 				errchk(accessible(files.back().c_str(), FileAccessState::R_OK),
 					"file inaccessable", files.back().c_str());
 			}
@@ -267,6 +268,11 @@ General option:
 int main(int argc, char** argv) {
 	Cmdline cmd(argc, argv);
 
+	if (cmd.get("help")) {
+		help(cmd.appname());
+		return 0;
+	}
+
 	auto errchk = [&](bool flag,
 		const char* errtype, const char* detail = nullptr) {
 			if (flag) return;
@@ -275,7 +281,7 @@ int main(int argc, char** argv) {
 			if (detail != nullptr) fprintf(stderr, " -- '%s'", detail);
 			fprintf(stderr, "\nTry '--help' for more information.\n");
 
-			quit(errtype[0]);
+			exit(errtype[0]);
 	};
 
 	RuntimeConfig conf(cmd, errchk);

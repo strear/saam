@@ -69,7 +69,7 @@ public:
 
 	size_t sizeOf(size_t dimension) const {
 		if (dimension + 1 < axisCount) {
-			return measures[dimension] / measures[dimension + 1];
+			return size_t(1.f * measures[dimension] / measures[dimension + 1]);
 		} else {
 			return measures[dimension];
 		}
@@ -192,13 +192,13 @@ public:
 
 private:
 	struct counted_ptr {
-		T* data;
+		T* data = nullptr;
 		size_t* refCount = nullptr;
 	} dataBase;
-	size_t dataOffset;
+	size_t dataOffset = 0;
 
 	size_t axisCount = 0;
-	size_t measures[max_dimensions];
+	size_t measures[max_dimensions]{};
 
 	void dummyInit() {}
 

@@ -12,6 +12,6 @@ namespace Saam {
         ~PicLoader();
 
         void loadPic(const char* file);
-        void getPixels(Array<int8_t>& receiver);
+        void getPixels(Array<uint8_t>& receiver);
     };
 }

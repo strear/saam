@@ -362,8 +362,8 @@ void Saam::projectImg(TextFramebuffer& framebuffer,
 
 	if (w == 0 || h == 0) return;
 
-	short edgeX = framebuffer.getWidth();
-	short edgeY = framebuffer.getHeight();
+	short edgeX = (short)framebuffer.getWidth();
+	short edgeY = (short)framebuffer.getHeight();
 	short originX = (edgeX - short(w) / 2) / 2;
 	short originY = (edgeY - short(h) / 4) / 2;
 	if (originX < 0) originX = 0;
@@ -437,8 +437,8 @@ void Saam::projectImgMono(TextFramebuffer& framebuffer,
 
 	if (w == 0 || h == 0) return;
 
-	short edgeX = framebuffer.getWidth();
-	short edgeY = framebuffer.getHeight();
+	short edgeX = (short)framebuffer.getWidth();
+	short edgeY = (short)framebuffer.getHeight();
 	short originX = (edgeX - short(w) / 2) / 2;
 	short originY = (edgeY - short(h) / 4) / 2;
 	if (originX < 0) originX = 0;
@@ -449,10 +449,10 @@ void Saam::projectImgMono(TextFramebuffer& framebuffer,
 	ColorRgb bg, fg;
 	if (reverse) {
 		fg = {};
-		bg.r() = bg.g() = bg.b() = 255;
+		bg.r() = bg.g() = bg.b() = (short)255;
 	} else {
 		bg = {};
-		fg.r() = fg.g() = fg.b() = 255;
+		fg.r() = fg.g() = fg.b() = (short)255;
 	}
 
 	const int fadeup = (density - 50) * (glyph_coverage - density_baseline) / 100;
