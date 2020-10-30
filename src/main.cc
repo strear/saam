@@ -21,16 +21,12 @@ namespace {
 		const char* media = nullptr;
 		int coefficient = 603;
 		char** fileList = nullptr;
-		size_t fileCou0;
+		size_t fileCount;
 		int interval = 6000000;
 
 		RuntimeConfig(Cmdline&);
 		~RuntimeConfig();
 	};
-
-    void getopts(Cmdline& cmd) {
-
-    }
 
     void help(const char* appname) {
 		const char* helpmsg = R"(Simple Ascii Art Maker, showing one or more image files at a time.
@@ -86,4 +82,14 @@ int main(int argc, char** argv) {
 
     
     return 0;
+}
+
+namespace {
+	RuntimeConfig::RuntimeConfig(Cmdline& cmd) {
+
+	}
+
+	RuntimeConfig::~RuntimeConfig() {
+
+	}
 }
