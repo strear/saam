@@ -154,7 +154,7 @@
     <ClCompile Include="src\main.cc" />
     <ClCompile Include="src\saam_graphic.cc" />
     <ClCompile Include="src\saam_search.cc" />
-    <ClCompile Include="src\tuiapp.cpp" />
+    <ClCompile Include="src\tuiapp.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="assets\resource.h" />
@@ -165,6 +165,7 @@
     <ClInclude Include="src\saam.hpp" />
     <ClInclude Include="src\saam_data.hpp" />
     <ClInclude Include="src\saam_graphic.hpp" />
+    <ClInclude Include="src\tuiapp.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\icon.ico" />
