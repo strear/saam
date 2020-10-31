@@ -1,5 +1,6 @@
 #include "../media.hpp"
 
+#include <SDL.h>
 #include <SDL_mixer.h>
 
 using namespace Saam;
@@ -13,7 +14,11 @@ namespace {
 #define impl_typed ((ImplData*)impl)
 
 Media::Media(const char* file) : impl(new ImplData()) {
-	impl_typed->music = Mix_LoadMUS("music.mp3");
+	SDL_Init(SDL_INIT_AUDIO);
+	SDL_AudioInit(NULL);
+	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024);
+
+	impl_typed->music = Mix_LoadMUS(file);
 }
 
 Media::~Media() {
