@@ -133,7 +133,7 @@ General option:
 		if (cmd.get("interval", intervalStr)) {
 			errchk(parseInt(intervalStr, interval),
 				"invalid interval value", intervalStr);
-			errchk(interval >= 0,
+			errchk(interval > 0,
 				"negative interval not allowed", intervalStr);
 		}
 
