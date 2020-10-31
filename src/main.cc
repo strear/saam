@@ -3,13 +3,14 @@
 #include "saam.hpp"
 #include "tuiapp.hpp"
 
+#include <chrono>
 #include <cstdio>
 #include <climits>
+#include <fstream>
 #include <functional>
 #include <iterator>
 #include <list>
 #include <string>
-#include <fstream>
 
 using namespace Saam;
 using namespace Tuiapp;
@@ -141,13 +142,13 @@ General option:
 				"file inaccessible", media);
 		}
 
-		std::string leftParam = cmd.firstPendOption();
-		errchk(leftParam.empty(), "unrecognized parameter", leftParam.c_str());
+		std::string leftOption = cmd.firstPendOption();
+		errchk(leftOption.empty(), "unrecognized parameter", leftOption.c_str());
 
 		cmd.get('-');
 		errchk(cmd.remainc() != 0, "missing file operand", nullptr);
 
-		leftParam = cmd.popValue();
+		const char* leftParam = cmd.popValue();
 		if (leftParam[0] == ':') {
 			errchk(accessible(&leftParam[1], FileAccessState::R_OK),
 				"file inaccessable", &leftParam[1]);
@@ -155,31 +156,36 @@ General option:
 			std::ifstream is(&leftParam[1]);
 			std::string buf{ std::istreambuf_iterator<char>(is),
 				std::istreambuf_iterator<char>() };
-			const size_t size = buf.length();
+			const size_t len = buf.length();
 
 			is.close();
 
-			for (const char* entry = buf.c_str(), *next_entry = entry;
-				next_entry + 1 < buf.c_str() + size; entry = next_entry + 1) {
+			for (size_t entry = 0, next_entry = 0;
+				next_entry < len - 1; entry = next_entry + 1) {
 
-				next_entry = std::find(entry, buf.c_str() + size, '\n');
-				std::string str(entry, next_entry - entry);
-				if (str.empty()) continue;
+				next_entry = buf.find('\n', entry);
+				if (entry == next_entry) continue;
 
-				files.push_back(str);
+				files.push_back(std::string(buf, entry, next_entry - entry));
 				errchk(accessible(files.back().c_str(), FileAccessState::R_OK),
 					"file inaccessable", files.back().c_str());
 			}
-		} else {
-			while (cmd.remainc() != 0) {
-				files.push_back(std::string(leftParam));
-				errchk(accessible(files.back().c_str(), FileAccessState::R_OK),
-					"file inaccessable", files.back().c_str());
-				leftParam = cmd.popValue();
-			}
+
+			errchk(files.size() > 0, "missing file operand", &leftParam[1]);
 		}
+		else {
+			files.push_back(std::string(leftParam));
+			errchk(accessible(files.back().c_str(), FileAccessState::R_OK),
+				"file inaccessable", files.back().c_str());
 
-		errchk(files.size() > 0, "missing file operand", &leftParam[1]);
+			while (cmd.remainc() != 0) {
+				files.push_back(std::string(cmd.popValue()));
+				errchk(accessible(files.back().c_str(), FileAccessState::R_OK),
+					"file inaccessable", files.back().c_str());
+			}
+
+			errchk(files.size() > 0, "missing file operand", nullptr);
+		}
 
 		if (intervalStr == nullptr && files.size() > 1) {
 			interval = 2000;
@@ -228,16 +234,18 @@ General option:
 	void show(Array<byte>* picBuf, size_t picNum, RuntimeConfig& conf,
 		Media* bgm, TextFramebuffer& display) {
 
-		clock_t tick = clock();
+		auto begintick = std::chrono::high_resolution_clock::now();
 
-		for (int i = 0; ; ) {
+		for (size_t i = 0; ; ) {
 			if (i >= picNum) {
 				if (bgm != nullptr) bgm->pause();
 
 				if (conf.loop) {
 					if (bgm != nullptr) bgm->reset();
 					i = 0;
-				} else {
+					begintick = std::chrono::high_resolution_clock::now();
+				}
+				else {
 					break;
 				}
 			}
@@ -252,7 +260,8 @@ General option:
 				projectImgMono(display, (ColorRgba*)picBuf[i].cptr(),
 					picBuf[i].sizeOf(1), picBuf[i].sizeOf(0),
 					conf.reverse, conf.density, conf.coefficient);
-			} else {
+			}
+			else {
 				projectImg(display, (ColorRgba*)picBuf[i].cptr(),
 					picBuf[i].sizeOf(1), picBuf[i].sizeOf(0),
 					!conf.grayscale, conf.shading, conf.reverse, conf.density,
@@ -260,8 +269,13 @@ General option:
 			}
 
 			display.flush(conf.monochrome && !conf.reverse, conf.noskip);
-			i = (clock() - tick) / conf.interval + 1;
-			sleep(conf.interval * i - (clock() - tick));
+			
+			const clock_t tick =
+				std::chrono::duration_cast<std::chrono::duration<clock_t, std::milli>>(
+					std::chrono::high_resolution_clock::now() - begintick).count();
+
+			i = tick / conf.interval + 1;
+			sleep(conf.interval * i - tick);
 		}
 	}
 }

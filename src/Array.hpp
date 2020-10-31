@@ -1,5 +1,9 @@
 ﻿#pragma once
 
+#include <cstdlib>
+#include <cstdint>
+using std::size_t;
+
 template <typename T>
 class Array {
 public:
@@ -79,8 +83,8 @@ public:
 		return axisCount;
 	}
 
-	template <typename ... Dummy_Σίσυφος_T>
-	Array at(size_t firstArg, Dummy_Σίσυφος_T... args) const {
+	template <typename ... Dummy_Sisyphos_T>
+	Array at(size_t firstArg, Dummy_Sisyphos_T... args) const {
 		return Array(*this, firstArg, args...);
 	}
 

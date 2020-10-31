@@ -50,7 +50,7 @@ namespace Saam {
 		static size_t getViewportWidth();
 		static size_t getViewportHeight();
 		static bool isMonochrome();
-		static void _putstr(const char*, size_t len);
+		static void _putframe(const char*, size_t len);
 
 		void put(const int x, const int y, const char,
 			const ColorRgb fg, const ColorRgb bg);

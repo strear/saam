@@ -82,8 +82,8 @@ void TextFramebuffer::ready() {
 	const size_t area = impl_typed->width * impl_typed->height;
 
 	memset(impl_typed->dataGrid, ' ', area * sizeof(char));
-	memset(impl_typed->frontColorGrid, 0, area * sizeof(ColorRgb));
-	memset(impl_typed->backColorGrid, 0, area * sizeof(ColorRgb));
+	memset((void*)(impl_typed->frontColorGrid), 0, area * sizeof(ColorRgb));
+	memset((void*)(impl_typed->backColorGrid), 0, area * sizeof(ColorRgb));
 }
 
 size_t TextFramebuffer::getWidth() {
@@ -132,8 +132,8 @@ namespace {
 	void ImplData::flushC() {
 		sequenceLength = 0;
 		ColorRgb oldFg, oldBg;
-		memset(&oldFg, -1, sizeof(ColorRgb));
-		memset(&oldBg, -1, sizeof(ColorRgb));
+		memset((void*)(&oldFg), -1, sizeof(ColorRgb));
+		memset((void*)(&oldBg), -1, sizeof(ColorRgb));
 
 		for (size_t i = 0; i < height; i++) {
 			char posSequence[16] = "\x1b[001;001H";
@@ -197,10 +197,10 @@ namespace {
 		}
 		outputSequence[sequenceLength] = '\0';
 
-		TextFramebuffer::_putstr(outputSequence, sequenceLength);
+		TextFramebuffer::_putframe(outputSequence, sequenceLength);
 	}
 
 	void ImplData::flushM() {
-		TextFramebuffer::_putstr(dataGrid, width * height);
+		TextFramebuffer::_putframe(dataGrid, width * height);
 	}
 }

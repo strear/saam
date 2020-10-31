@@ -66,7 +66,7 @@ bool TextFramebuffer::isMonochrome() {
 	return false;
 }
 
-void TextFramebuffer::_putstr(const char* str, size_t len) {
+void TextFramebuffer::_putframe(const char* str, size_t len) {
 	DWORD dWrite = 0;
 	SetConsoleCursorPosition(hOutput, { 0, 0 });
 	WriteConsoleA(hOutput, str, (DWORD)len, &dWrite, NULL);

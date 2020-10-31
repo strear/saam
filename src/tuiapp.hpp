@@ -3,6 +3,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <string>
+#include <stdexcept>
 
 namespace Tuiapp {
     class Cmdline {
@@ -38,7 +39,7 @@ namespace Tuiapp {
         try {
             dst = std::stoi(std::string(src));
             return true;
-        } catch (std::exception e) {
+        } catch (std::logic_error& e) {
             return false;
         }
     }
