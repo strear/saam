@@ -30,15 +30,18 @@ namespace {
 			dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 			SetConsoleMode(hOutput, dwMode);
 
-			SetConsoleActiveScreenBuffer(hOutput);
-
 		}(), nullptr);
+
+	bool inited = false;
 
 	COORD size;
 	bool boundDataUpdated = false;
 
 	void updateBoundData() {
 		if (!boundDataUpdated) {
+			if (!inited)
+				SetConsoleActiveScreenBuffer(hOutput);
+
 			CONSOLE_SCREEN_BUFFER_INFO csbi;
 			GetConsoleScreenBufferInfo(hOutput, &csbi);
 
