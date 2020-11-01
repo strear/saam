@@ -30,7 +30,7 @@ namespace {
 		const char* media = nullptr;
 		int coefficient = 603;
 		std::list<std::string> files;
-		int interval = 6000000;
+		double interval = 6000000;
 
 		RuntimeConfig(Cmdline&, std::function<void(bool, const char*, const char*)>);
 	};
@@ -70,7 +70,7 @@ Parameters:
   --media               media for playing in the background while showing the
                         images
   --interval            time interval between showing different images, in
-                        milliseconds
+                        milliseconds. accept fractions in `/' divided form
 
 General option:
   --help                display this help and exit
@@ -133,6 +133,15 @@ General option:
 		if (cmd.get("interval", intervalStr)) {
 			errchk(parseInt(intervalStr, interval),
 				"invalid interval value", intervalStr);
+
+			const char* divptr = strchr(intervalStr, '/');
+			if (divptr != nullptr) {
+				int intervalDenom;
+				errchk(parseInt(divptr + 1, intervalDenom) && intervalDenom != 0,
+					"invalid interval value", intervalStr);
+				interval /= intervalDenom;
+			}
+
 			errchk(interval > 0,
 				"negative interval not allowed", intervalStr);
 		}
@@ -269,7 +278,7 @@ General option:
 			}
 
 			display.flush(conf.monochrome && !conf.reverse, conf.noskip);
-			
+
 			const clock_t tick =
 				std::chrono::duration_cast<std::chrono::duration<clock_t, std::milli>>(
 					std::chrono::steady_clock::now() - begintick).count();
