@@ -234,7 +234,7 @@ General option:
 	void show(Array<byte>* picBuf, size_t picNum, RuntimeConfig& conf,
 		Media* bgm, TextFramebuffer& display) {
 
-		auto begintick = std::chrono::high_resolution_clock::now();
+		auto begintick = std::chrono::steady_clock::now();
 
 		for (size_t i = 0; ; ) {
 			if (i >= picNum) {
@@ -243,7 +243,7 @@ General option:
 				if (conf.loop) {
 					if (bgm != nullptr) bgm->reset();
 					i = 0;
-					begintick = std::chrono::high_resolution_clock::now();
+					begintick = std::chrono::steady_clock::now();
 				}
 				else {
 					break;
@@ -272,7 +272,7 @@ General option:
 			
 			const clock_t tick =
 				std::chrono::duration_cast<std::chrono::duration<clock_t, std::milli>>(
-					std::chrono::high_resolution_clock::now() - begintick).count();
+					std::chrono::steady_clock::now() - begintick).count();
 
 			i = tick / conf.interval + 1;
 			sleep(conf.interval * i - tick);
