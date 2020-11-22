@@ -244,6 +244,7 @@ General option:
 		Media* bgm, TextFramebuffer& display) {
 
 		auto begintick = std::chrono::steady_clock::now();
+		Array<byte> currentFrame;
 
 		for (size_t i = 0; ; ) {
 			if (i >= picNum) {
@@ -260,19 +261,22 @@ General option:
 			}
 			if (i == 0 && bgm != nullptr) bgm->play();
 
+			currentFrame = picBuf[i];
+
+			if (conf.autoscale) {
+				fit(currentFrame, display.getWidth(), display.getHeight());
+			}
+
 			display.ready();
 
-			if (conf.autoscale)
-				fit(picBuf[i], display.getWidth(), display.getHeight());
-
 			if (conf.monochrome) {
-				projectImgMono(display, (ColorRgba*)picBuf[i].cptr(),
-					picBuf[i].sizeOf(1), picBuf[i].sizeOf(0),
+				projectImgMono(display, (ColorRgba*)currentFrame.cptr(),
+					currentFrame.sizeOf(1), currentFrame.sizeOf(0),
 					conf.reverse, conf.density, conf.coefficient);
 			}
 			else {
-				projectImg(display, (ColorRgba*)picBuf[i].cptr(),
-					picBuf[i].sizeOf(1), picBuf[i].sizeOf(0),
+				projectImg(display, (ColorRgba*)currentFrame.cptr(),
+					currentFrame.sizeOf(1), currentFrame.sizeOf(0),
 					!conf.grayscale, conf.shading, conf.reverse, conf.density,
 					conf.shadingThreshold, conf.coefficient);
 			}
