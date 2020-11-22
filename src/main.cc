@@ -263,11 +263,11 @@ General option:
 
 			currentFrame = picBuf[i];
 
+			display.ready();
+
 			if (conf.autoscale) {
 				fit(currentFrame, display.getWidth(), display.getHeight());
 			}
-
-			display.ready();
 
 			if (conf.monochrome) {
 				projectImgMono(display, (ColorRgba*)currentFrame.cptr(),
