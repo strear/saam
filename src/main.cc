@@ -10,6 +10,7 @@
 #include <functional>
 #include <iterator>
 #include <list>
+#include <vector>
 #include <string>
 
 using namespace Saam;
@@ -220,39 +221,23 @@ General option:
 		}
 	}
 
-	size_t load(Array<byte>* picBuf, RuntimeConfig& conf,
-		PicLoader& imread) {
-
-		const size_t fileCount = conf.files.size();
-		size_t i = 0;
-
-		while (!conf.files.empty()) {
-			imread.loadPic(conf.files.front().c_str());
-			imread.getPixels(picBuf[i]);
-			conf.files.pop_front();
-
-			fit(picBuf[i], conf.maxWidth, conf.maxHeight);
-
-			printf("\rLoading image %zu / %zu...", ++i, fileCount);
-		}
-
-		printf("\n");
-		return i;
-	}
-
-	void show(Array<byte>* picBuf, size_t picNum, RuntimeConfig& conf,
-		Media* bgm, TextFramebuffer& display) {
+	void show(RuntimeConfig& conf, Media* bgm,
+		TextFramebuffer& display, PicLoader& imread) {
 
 		auto begintick = std::chrono::steady_clock::now();
 		Array<byte> currentFrame;
 
+		std::vector<std::string> loadlist(conf.files.begin(), conf.files.end());
+
 		for (size_t i = 0; ; ) {
-			if (i >= picNum) {
+			if (i >= loadlist.size()) {
 				if (bgm != nullptr) bgm->pause();
 
 				if (conf.loop) {
 					if (bgm != nullptr) bgm->reset();
 					i = 0;
+					loadlist = std::vector<std::string>(
+						conf.files.begin(), conf.files.end());
 					begintick = std::chrono::steady_clock::now();
 				}
 				else {
@@ -261,7 +246,9 @@ General option:
 			}
 			if (i == 0 && bgm != nullptr) bgm->play();
 
-			currentFrame = picBuf[i];
+			imread.loadPic(loadlist[i].c_str());
+			imread.getPixels(currentFrame);
+			fit(currentFrame, conf.maxWidth, conf.maxHeight);
 
 			display.ready();
 
@@ -313,23 +300,15 @@ int main(int argc, char** argv) {
 	};
 
 	RuntimeConfig conf(cmd, errchk);
-
 	PicLoader imread;
-
-	Array<byte>* picBuf = new Array<byte>[conf.files.size()];
-	errchk(picBuf != nullptr, "out of memory");
-	size_t picNum = load(picBuf, conf, imread);
-
 	TextFramebuffer display;
-
 	Media* bgm = nullptr;
 
 	if (conf.media != nullptr) bgm = new Media(conf.media);
 
-	show(picBuf, picNum, conf, bgm, display);
+	show(conf, bgm, display, imread);
 
 	if (bgm != nullptr) delete bgm;
-	delete[] picBuf;
 
 	return 0;
 }

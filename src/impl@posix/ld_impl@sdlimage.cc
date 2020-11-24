@@ -32,10 +32,15 @@ PicLoader::~PicLoader() {
 }
 
 void PicLoader::loadPic(const char* file) {
+	if (impl_typed->image != nullptr)
+		SDL_FreeSurface(impl_typed->image);
+
 	impl_typed->image = IMG_Load(file);
 	if (!impl_typed->image) quitWithError("Load picture failed", IMG_GetError());
 
-	impl_typed->image = SDL_ConvertSurface(impl_typed->image, impl_typed->format, 0);
+	auto converted_image = SDL_ConvertSurface(impl_typed->image, impl_typed->format, 0);
+	SDL_FreeSurface(impl_typed->image);
+	impl_typed->image = converted_image;
 }
 
 void PicLoader::getPixels(Array<uint8_t>& receiver) {

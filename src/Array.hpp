@@ -45,6 +45,15 @@ public:
 	}
 
 	Array(const Array& ref) {
+		if (dataBase.refCount != nullptr) {
+			(*dataBase.refCount)--;
+
+			if (*(dataBase.refCount) == 0) {
+				delete[] dataBase.data;
+				delete dataBase.refCount;
+			}
+		}
+
 		dataOffset = ref.dataOffset;
 
 		axisCount = ref.axisCount;
@@ -74,7 +83,8 @@ public:
 	size_t sizeOf(size_t dimension) const {
 		if (dimension + 1 < axisCount) {
 			return size_t(1.f * measures[dimension] / measures[dimension + 1]);
-		} else {
+		}
+		else {
 			return measures[dimension];
 		}
 	}
@@ -220,7 +230,8 @@ private:
 
 		if (depth < ref.axisCount) {
 			dataOffset += firstArg * ref.measures[depth];
-		} else {
+		}
+		else {
 			dataOffset += firstArg;
 		}
 
@@ -248,9 +259,11 @@ private:
 	void pasteInternal(const Array& ref, size_t offset) {
 		if (ref.axisCount == 0) {
 			dataBase.data[offset] = ref.get();
-		} else if (ref.axisCount == 1) {
+		}
+		else if (ref.axisCount == 1) {
 			memcpy(dataBase.data + offset, ref.cptr(), ref.measureOf(0) * sizeof(T));
-		} else {
+		}
+		else {
 			for (size_t i = 0; i < ref.sizeOf(0); i++) {
 				pasteInternal(ref[i], offset + i * measures[1]);
 			}
