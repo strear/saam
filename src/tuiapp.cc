@@ -55,16 +55,17 @@ Cmdline::Cmdline(int argc, char** argv)
 				if (cptr != &argv[i][2]) {
 					entities_typed->push_back(
 						{ std::string(&argv[i][2], cptr - &argv[i][2]), cptr + 1 });
+					attachAsValue = false;
 				} else {
 					entities_typed->push_back({ std::string(&argv[i][2]) });
+					attachAsValue = true;
 				}
 			} else {
 				for (const char* cptr = &argv[i][1]; *cptr != '\0'; cptr++) {
 					entities_typed->push_back({ std::string(1, *cptr) });
+					attachAsValue = true;
 				}
 			}
-
-			attachAsValue = true;
 		} else {
 			if (attachAsValue) {
 				entities_typed->back().value = argv[i];
