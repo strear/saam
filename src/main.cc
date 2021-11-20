@@ -24,7 +24,7 @@ namespace {
 		bool shading = 0;
 		bool noskip = 0;
 		int density = 50;
-		unsigned char shadingThreshold = 1;
+		unsigned char shadingThreshold = 32;
 		bool loop = 0;
 		bool autoscale = 0;
 		size_t maxWidth = INT_MAX, maxHeight = INT_MAX;
@@ -91,7 +91,7 @@ General option:
 
 			if (shading) {
 				const char* thresholdStr;
-				if (cmd.get("shadingThreshold", thresholdStr)) {
+				if (cmd.get("shading-threshold", thresholdStr)) {
 					errchk(parseInt(thresholdStr, this->shadingThreshold),
 						"invalid threshold value", thresholdStr);
 					errchk(shadingThreshold > 0 && shadingThreshold <= 255,
